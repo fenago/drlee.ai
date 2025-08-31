@@ -34,17 +34,25 @@ export const TabTile: React.FC<TabTileProps> = ({
           <motion.div
             onClick={onClick}
             className={classNames(
-              'relative flex flex-col items-center p-6 rounded-xl',
+              'relative flex flex-col items-center p-6 rounded-2xl cursor-pointer',
               'w-full h-full min-h-[160px]',
-              'bg-white dark:bg-[#141414]',
-              'border border-[#E5E5E5] dark:border-[#333333]',
-              'group',
-              'hover:bg-purple-50 dark:hover:bg-[#1a1a1a]',
-              'hover:border-purple-200 dark:hover:border-purple-900/30',
-              isActive ? 'border-purple-500 dark:border-purple-500/50 bg-purple-500/5 dark:bg-purple-500/10' : '',
-              isLoading ? 'cursor-wait opacity-70' : '',
+              'bg-gradient-to-br from-white via-purple-50/20 to-blue-50/20',
+              'dark:bg-gradient-to-br dark:from-gray-900 dark:via-purple-950/20 dark:to-blue-950/20',
+              'border-2 border-purple-200/50 dark:border-purple-800/30',
+              'group overflow-hidden',
+              'hover:from-purple-100/50 hover:via-purple-50/30 hover:to-blue-100/50',
+              'dark:hover:from-purple-950/40 dark:hover:via-purple-900/30 dark:hover:to-blue-950/40',
+              'hover:border-purple-400/60 dark:hover:border-purple-600/50',
+              'transition-all duration-300 transform hover:scale-[1.02]',
+              'shadow-lg hover:shadow-xl hover:shadow-purple-500/20',
+              isActive
+                ? 'ring-2 ring-purple-500/50 dark:ring-purple-400/50 bg-purple-100/30 dark:bg-purple-900/30 scale-[1.03]'
+                : '',
+              isLoading ? 'cursor-wait opacity-70 animate-pulse' : '',
               className || '',
             )}
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.98 }}
           >
             {/* Main Content */}
             <div className="flex flex-col items-center justify-center flex-1 w-full">

@@ -382,6 +382,13 @@ export const Menu = () => {
                 <span className={selectionMode ? 'i-ph:x h-4 w-4' : 'i-ph:check-square h-4 w-4'} />
               </button>
             </div>
+            <button
+              onClick={handleSettingsClick}
+              className="w-full flex gap-2 items-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition-colors border border-gray-200 dark:border-gray-700"
+            >
+              <span className="inline-block i-ph:gear h-4 w-4" />
+              <span className="text-sm font-medium">Settings</span>
+            </button>
             <div className="relative w-full">
               <div className="absolute left-3 top-1/2 -translate-y-1/2">
                 <span className="i-ph:magnifying-glass h-4 w-4 text-gray-400 dark:text-gray-500" />

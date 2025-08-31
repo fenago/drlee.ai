@@ -413,14 +413,14 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
   return (
     <RadixDialog.Root open={open}>
       <RadixDialog.Portal>
-        <div className="fixed inset-0 flex items-center justify-center z-[100] modern-scrollbar">
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] modern-scrollbar">
           <RadixDialog.Overlay asChild>
             <motion.div
-              className="absolute inset-0 bg-black/70 dark:bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-black/90 to-blue-900/90 backdrop-blur-md"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3 }}
             />
           </RadixDialog.Overlay>
 
@@ -428,14 +428,16 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
             aria-describedby={undefined}
             onEscapeKeyDown={handleClose}
             onPointerDownOutside={handleClose}
-            className="relative z-[101]"
+            className="relative z-[10000]"
           >
             <motion.div
               className={classNames(
                 'w-[1200px] h-[90vh]',
-                'bg-[#FAFAFA] dark:bg-[#0A0A0A]',
-                'rounded-2xl shadow-2xl',
-                'border border-[#E5E5E5] dark:border-[#1A1A1A]',
+                'bg-gradient-to-br from-white via-purple-50/30 to-blue-50/30',
+                'dark:bg-gradient-to-br dark:from-gray-900 dark:via-purple-950/30 dark:to-blue-950/30',
+                'rounded-3xl shadow-2xl',
+                'ring-2 ring-purple-500/20 dark:ring-purple-400/20',
+                'border border-purple-200/50 dark:border-purple-800/50',
                 'flex flex-col overflow-hidden',
                 'relative',
               )}
@@ -449,24 +451,25 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
               </div>
               <div className="relative z-10 flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between px-8 py-5 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-purple-600/10 dark:from-purple-600/20 dark:via-blue-600/20 dark:to-purple-600/20 border-b border-purple-300/30 dark:border-purple-700/30">
                   <div className="flex items-center space-x-4">
                     {(activeTab || showTabManagement) && (
                       <button
                         onClick={handleBack}
-                        className="flex items-center justify-center w-8 h-8 rounded-full bg-transparent hover:bg-purple-500/10 dark:hover:bg-purple-500/20 group transition-all duration-200"
+                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 group transition-all duration-300 transform hover:scale-105"
                       >
-                        <div className="i-ph:arrow-left w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-purple-500 transition-colors" />
+                        <div className="i-ph:arrow-left w-5 h-5 text-purple-700 dark:text-purple-300 group-hover:text-purple-600 dark:group-hover:text-purple-200 transition-colors" />
                       </button>
                     )}
-                    <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {showTabManagement ? 'Tab Management' : activeTab ? TAB_LABELS[activeTab] : 'Control Panel'}
+                    <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
+                      {showTabManagement ? 'Tab Management' : activeTab ? TAB_LABELS[activeTab] : '✨ Control Panel'}
                     </DialogTitle>
                   </div>
 
                   <div className="flex items-center gap-6">
                     {/* Mode Toggle */}
-                    <div className="flex items-center gap-2 min-w-[140px] border-r border-gray-200 dark:border-gray-800 pr-6">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-purple-100/50 to-blue-100/50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-xl border border-purple-300/30 dark:border-purple-700/30">
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">⚡</span>
                       <AnimatedSwitch
                         id="developer-mode"
                         checked={developerMode}
@@ -476,16 +479,16 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
                     </div>
 
                     {/* Avatar and Dropdown */}
-                    <div className="border-l border-gray-200 dark:border-gray-800 pl-6">
+                    <div className="border-l-2 border-purple-300/30 dark:border-purple-700/30 pl-6">
                       <AvatarDropdown onSelectTab={handleTabClick} />
                     </div>
 
                     {/* Close Button */}
                     <button
                       onClick={handleClose}
-                      className="flex items-center justify-center w-8 h-8 rounded-full bg-transparent hover:bg-purple-500/10 dark:hover:bg-purple-500/20 group transition-all duration-200"
+                      className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 group transition-all duration-300 transform hover:scale-105 hover:rotate-90"
                     >
-                      <div className="i-ph:x w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-purple-500 transition-colors" />
+                      <div className="i-ph:x-bold w-5 h-5 text-red-600 dark:text-red-400 group-hover:text-red-500 dark:group-hover:text-red-300 transition-colors" />
                     </button>
                   </div>
                 </div>

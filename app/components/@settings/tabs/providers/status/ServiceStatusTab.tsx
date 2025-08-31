@@ -276,7 +276,7 @@ const ServiceStatusTab = () => {
     ): Promise<{ ok: boolean; status: number | string; message?: string; responseTime: number }> => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Reduced timeout to 5 seconds
 
         const startTime = performance.now();
 
@@ -291,6 +291,14 @@ const ServiceStatusTab = () => {
           method: 'GET',
           headers: processedHeaders,
           signal: controller.signal,
+          mode: 'cors', // Explicitly set CORS mode
+        }).catch((fetchError) => {
+          // Handle fetch errors explicitly
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Request timed out');
+          }
+
+          throw new Error(`Network error: ${fetchError.message}`);
         });
 
         const endTime = performance.now();
@@ -597,6 +605,9 @@ const ServiceStatusTab = () => {
       try {
         setTestingStatus('testing');
 
+        // Add immediate feedback
+        success('Testing API key...');
+
         const config = PROVIDER_STATUS_URLS[provider];
 
         if (!config) {
@@ -626,32 +637,68 @@ const ServiceStatusTab = () => {
           case 'Google': {
             // Google uses the API key directly in the URL
             const googleUrl = `${config.apiUrl}?key=${apiKey}`;
-            const result = await checkApiEndpoint(googleUrl, {}, config.testModel);
+
+            // Create a timeout promise
+            const timeoutPromise = new Promise<{ ok: false; message: string }>((resolve) =>
+              setTimeout(() => resolve({ ok: false, message: 'Request timed out after 5 seconds' }), 5000),
+            );
+
+            const result = await Promise.race([checkApiEndpoint(googleUrl, {}, config.testModel), timeoutPromise]);
 
             if (result.ok) {
               setTestingStatus('success');
-              success('API key is valid!');
+              success('✅ API key is valid!');
             } else {
               setTestingStatus('error');
-              error(`API key test failed: ${result.message}`);
+              error(`❌ API key test failed: ${result.message}`);
             }
+
+            setTimeout(() => setTestingStatus('idle'), 3000);
 
             return;
           }
         }
 
-        const { ok, message } = await checkApiEndpoint(config.apiUrl, headers, config.testModel);
+        // Create a timeout promise for all other providers
+        const timeoutPromise = new Promise<{ ok: false; message: string }>((resolve) =>
+          setTimeout(() => resolve({ ok: false, message: 'Request timed out after 5 seconds' }), 5000),
+        );
+
+        const { ok, message } = await Promise.race([
+          checkApiEndpoint(config.apiUrl, headers, config.testModel),
+          timeoutPromise,
+        ]);
 
         if (ok) {
           setTestingStatus('success');
-          success('API key is valid!');
+          success('✅ API key is valid!');
         } else {
           setTestingStatus('error');
-          error(`API key test failed: ${message}`);
+
+          // Check for CORS error
+          if (message?.includes('CORS') || message?.includes('Failed to fetch')) {
+            error(
+              `❌ Cannot test API key from browser due to CORS restrictions. Please verify your key is correct and try using it in your application.`,
+            );
+          } else {
+            error(`❌ API key test failed: ${message}`);
+          }
         }
       } catch (err: unknown) {
         setTestingStatus('error');
-        error('Failed to test API key: ' + (err instanceof Error ? err.message : 'Unknown error'));
+
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+        // Check for common browser errors
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+          error(
+            '❌ Cannot test API key from browser due to CORS restrictions. Please verify your key is correct and save it.',
+          );
+        } else if (errorMessage.includes('Timeout')) {
+          error('❌ API key test timed out. The service might be slow or unavailable.');
+        } else {
+          error('❌ Failed to test API key: ' + errorMessage);
+        }
       } finally {
         // Reset testing status after a delay
         setTimeout(() => setTestingStatus('idle'), 3000);
