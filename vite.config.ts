@@ -96,9 +96,16 @@ export default defineConfig((config) => {
       rollupOptions: {
         output: {
           format: 'esm',
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            ui: ['@radix-ui/react-collapsible', '@radix-ui/react-scroll-area'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('@radix-ui')) {
+                return 'ui';
+              }
+              if (id.includes('monaco-editor')) {
+                return 'monaco';
+              }
+              return 'vendor';
+            }
           },
         },
         maxParallelFileOps: 2,
