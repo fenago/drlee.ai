@@ -15,7 +15,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@remix-run/node"]
+  external_node_modules = ["@remix-run/node", "react", "react-dom"]
   included_files = ["build/server/**"]
 
 [[headers]]
