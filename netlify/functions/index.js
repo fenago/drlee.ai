@@ -1,7 +1,6 @@
-import { createRequestHandler } from "@remix-run/node";
-import * as build from "../../build/server/index.js";
+const { createRequestHandler } = require("@remix-run/node");
 
-export const handler = createRequestHandler({
-  build,
+exports.handler = createRequestHandler({
+  build: require("../../build/server/index.js"),
   mode: process.env.NODE_ENV,
 });
