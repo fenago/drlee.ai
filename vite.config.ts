@@ -160,7 +160,6 @@ export default defineConfig((config) => {
           v3_throwAbortReason: true,
           v3_lazyRouteDiscovery: true,
         },
-        serverBuildFile: 'index.js',
       }),
       netlifyPlugin(),
       UnoCSS(),
