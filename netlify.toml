@@ -1,6 +1,7 @@
 [build]
   publish = "build/client"
   command = "NODE_OPTIONS='--max-old-space-size=4096' npm run build"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -9,11 +10,12 @@
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/index"
   status = 200
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["@remix-run/netlify"]
 
 [[headers]]
   for = "/*"
