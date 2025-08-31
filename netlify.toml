@@ -1,0 +1,25 @@
+[build]
+  publish = "build/client"
+  command = "NODE_OPTIONS='--max-old-space-size=4096' npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "10"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

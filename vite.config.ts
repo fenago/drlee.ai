@@ -57,7 +57,7 @@ const getPackageJson = () => {
     };
   } catch {
     return {
-      name: 'bolt.diy',
+      name: 'DrLee.AI',
       description: 'A DIY LLM interface',
       license: 'MIT',
       dependencies: {},
@@ -96,11 +96,18 @@ export default defineConfig((config) => {
       rollupOptions: {
         output: {
           format: 'esm',
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            ui: ['@radix-ui/react-collapsible', '@radix-ui/react-scroll-area'],
+          },
         },
+        maxParallelFileOps: 2,
       },
       commonjsOptions: {
         transformMixedEsModules: true,
       },
+      chunkSizeWarningLimit: 1000,
+      sourcemap: false,
     },
     optimizeDeps: {
       esbuildOptions: {
