@@ -1,22 +1,12 @@
 [build]
-  publish = "build/client"
   command = "npm install --legacy-peer-deps && NODE_OPTIONS='--max-old-space-size=4096' npm run build"
-  functions = "netlify/functions"
+  publish = "build/client"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
   NODE_OPTIONS = "--max-old-space-size=4096"
 
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200
-
-[functions]
-  node_bundler = "zisi"
-  external_node_modules = ["@remix-run/node"]
-  included_files = ["build/**"]
 
 [[headers]]
   for = "/*"
