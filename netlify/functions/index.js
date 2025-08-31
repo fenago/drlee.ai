@@ -1,9 +1,16 @@
 import { createRequestHandler } from "@remix-run/node";
 
-// Use dynamic import to handle the server build with top-level await
-const build = await import("../../build/server/index.js");
+let cachedHandler;
 
-export const handler = createRequestHandler({
-  build,
-  mode: process.env.NODE_ENV,
-});
+export const handler = async (event, context) => {
+  if (!cachedHandler) {
+    // Lazy load the server build to handle top-level await
+    const build = await import("../../build/server/index.js");
+    cachedHandler = createRequestHandler({
+      build,
+      mode: process.env.NODE_ENV,
+    });
+  }
+  
+  return cachedHandler(event, context);
+};
