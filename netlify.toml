@@ -14,9 +14,9 @@
   status = 200
 
 [functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@remix-run/node", "react", "react-dom"]
-  included_files = ["build/server/**"]
+  node_bundler = "zisi"
+  external_node_modules = ["@remix-run/node"]
+  included_files = ["build/**"]
 
 [[headers]]
   for = "/*"
