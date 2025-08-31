@@ -1,6 +1,6 @@
 [build]
   publish = "build/client"
-  command = "pnpm install --no-frozen-lockfile && NODE_OPTIONS='--max-old-space-size=4096' npm run build"
+  command = "npm ci && NODE_OPTIONS='--max-old-space-size=4096' npm run build"
   functions = "netlify/functions"
 
 [build.environment]
@@ -15,7 +15,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@remix-run/netlify"]
+  external_node_modules = ["@remix-run/node"]
 
 [[headers]]
   for = "/*"
