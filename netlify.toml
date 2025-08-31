@@ -1,6 +1,6 @@
 [build]
   command = "npm install --legacy-peer-deps && NODE_OPTIONS='--max-old-space-size=4096' npm run build"
-  publish = ".netlify/build/client"
+  publish = "build/client"
 
 [build.environment]
   NODE_VERSION = "18"
