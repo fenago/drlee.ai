@@ -1,11 +1,13 @@
 const { createRequestHandler } = require("@remix-run/node");
+const path = require("path");
 
 let cachedHandler;
 
 exports.handler = async (event, context) => {
   if (!cachedHandler) {
-    // Use dynamic import to handle the server build with top-level await
-    const build = await import("../../build/server/index.js");
+    // Use absolute path to load the server build
+    const serverBuildPath = path.join(process.cwd(), "build", "server", "index.js");
+    const build = await import(serverBuildPath);
     cachedHandler = createRequestHandler({
       build: build.default || build,
       mode: process.env.NODE_ENV,

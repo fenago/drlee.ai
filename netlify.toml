@@ -16,6 +16,7 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@remix-run/node"]
+  included_files = ["build/server/**"]
 
 [[headers]]
   for = "/*"
