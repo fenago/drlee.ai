@@ -1,6 +1,6 @@
 [build]
   publish = "build/client"
-  command = "NODE_OPTIONS='--max-old-space-size=4096' npm run build"
+  command = "pnpm install --no-frozen-lockfile && NODE_OPTIONS='--max-old-space-size=4096' npm run build"
   functions = "netlify/functions"
 
 [build.environment]
