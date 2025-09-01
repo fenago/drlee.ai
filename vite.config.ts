@@ -4,6 +4,7 @@ import { defineConfig, type ViteDevServer } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { optimizeCssModules } from 'vite-plugin-optimize-css-modules';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { netlifyPlugin } from '@netlify/remix-adapter/plugin';
 import * as dotenv from 'dotenv';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
@@ -168,6 +169,7 @@ export default defineConfig((config) => {
       }),
       UnoCSS(),
       tsconfigPaths(),
+      netlifyPlugin(),
       chrome129IssuePlugin(),
       config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
     ],
