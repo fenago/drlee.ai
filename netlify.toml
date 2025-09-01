@@ -2,6 +2,7 @@
   publish = "build/client"
   # Force fresh install - Linux compatible commands 
   command = "rm -f pnpm-lock.yaml && rm -rf node_modules && npm ci --legacy-peer-deps && npm run build"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
