@@ -1,13 +1,14 @@
 [build]
   publish = "build/client"
-  command = "npm ci --legacy-peer-deps && npm run build"
+  command = "echo 'Skipping auto-install' && npm ci --legacy-peer-deps && npm run build"
+  ignore = "/bin/false"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
   NODE_OPTIONS = "--max-old-space-size=4096"
   NPM_FLAGS = "--legacy-peer-deps"
-  NETLIFY_USE_PNPM = "false"
+  NETLIFY_SKIP_INSTALL = "true"
 
 [[redirects]]
   from = "/*"
