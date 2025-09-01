@@ -1,6 +1,6 @@
 [build]
   publish = "build/client"
-  # Force fresh install - Linux compatible commands
+  # Force fresh install - Linux compatible commands 
   command = "rm -f pnpm-lock.yaml && rm -rf node_modules && npm ci --legacy-peer-deps && npm run build"
 
 [build.environment]
