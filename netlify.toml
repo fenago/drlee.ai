@@ -1,7 +1,7 @@
 [build]
   publish = "build/client"
-  # Force fresh install - updated
-  command = "if exist pnpm-lock.yaml (del /f pnpm-lock.yaml) && if exist node_modules (rmdir /s /q node_modules) && npm ci --legacy-peer-deps && npm run build"
+  # Force fresh install - Linux compatible commands
+  command = "rm -f pnpm-lock.yaml && rm -rf node_modules && npm ci --legacy-peer-deps && npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
