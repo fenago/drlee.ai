@@ -1,10 +1,9 @@
-import { vitePlugin as remixVitePlugin } from '@remix-run/dev';
+import { cloudflareDevProxyVitePlugin as remixCloudflareDevProxy, vitePlugin as remixVitePlugin } from '@remix-run/dev';
 import UnoCSS from 'unocss/vite';
 import { defineConfig, type ViteDevServer } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { optimizeCssModules } from 'vite-plugin-optimize-css-modules';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { netlifyPlugin } from '@netlify/remix-adapter/plugin';
 import * as dotenv from 'dotenv';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
@@ -96,26 +95,31 @@ export default defineConfig((config) => {
       target: 'esnext',
       rollupOptions: {
         output: {
-          format: 'esm',
-          manualChunks(id) {
+          manualChunks: (id: string) => {
+            // Only apply manual chunks for client build, not SSR
             if (id.includes('node_modules')) {
               if (id.includes('@radix-ui')) {
                 return 'ui';
               }
-              if (id.includes('monaco-editor')) {
-                return 'monaco';
+              // Don't manually chunk React for SSR build
+              if (!process.env.VITE_BUILD_SSR && (id.includes('react/') || id.includes('react-dom/'))) {
+                return 'vendor';
               }
-              return 'vendor';
             }
           },
+          chunkFileNames: 'assets/[name]-[hash].js'
         },
-        maxParallelFileOps: 2,
+        onwarn(warning: any, warn: any) {
+          if (warning.code === 'EVAL' || warning.code === 'MODULE_LEVEL_DIRECTIVE') {
+            return;
+          }
+          warn(warning);
+        },
       },
-      commonjsOptions: {
-        transformMixedEsModules: true,
-      },
-      chunkSizeWarningLimit: 1000,
       sourcemap: false,
+      chunkSizeWarningLimit: 1000,
+      minify: 'esbuild',
+      assetsInlineLimit: 0,
     },
     optimizeDeps: {
       esbuildOptions: {
@@ -153,6 +157,7 @@ export default defineConfig((config) => {
           return null;
         },
       },
+      config.mode !== 'test' && remixCloudflareDevProxy(),
       remixVitePlugin({
         future: {
           v3_fetcherPersist: true,
@@ -161,7 +166,6 @@ export default defineConfig((config) => {
           v3_lazyRouteDiscovery: true,
         },
       }),
-      netlifyPlugin(),
       UnoCSS(),
       tsconfigPaths(),
       chrome129IssuePlugin(),
