@@ -1,11 +1,12 @@
 [build]
   publish = "build/client"
-  command = "rm -rf node_modules && npm ci --legacy-peer-deps && npm run build"
+  command = "rm -rf node_modules pnpm-lock.yaml && npm ci --legacy-peer-deps && npm run build"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   NPM_VERSION = "10"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  NETLIFY_USE_PNPM = "false"
 
 [[redirects]]
   from = "/*"
