@@ -15,8 +15,9 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
   included_files = ["build/**"]
+  node_bundler = "esbuild"
+  external_node_modules = ["react", "react-dom"]
 
 [[headers]]
   for = "/*"
