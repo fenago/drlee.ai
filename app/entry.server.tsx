@@ -1,6 +1,8 @@
 import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
-import { renderToReadableStream } from 'react-dom/server';
+import ReactDOMServer from 'react-dom/server';
+
+const renderToReadableStream = ReactDOMServer.renderToReadableStream || (ReactDOMServer as any).renderToReadableStream;
 
 export default async function handleRequest(
   request: Request,
