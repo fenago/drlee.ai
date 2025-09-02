@@ -1,21 +1,23 @@
 [build]
-  command = "rm -f pnpm-lock.yaml package-lock.json && rm -rf node_modules && npm ci --legacy-peer-deps && npm run build"
+  command = "npm run build"
   publish = "build/client"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_VERSION = "10"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  NETLIFY_USE_PNPM = "false"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["build/server/**"]
 
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/remix-server"
   status = 200
   force = true
-
-[functions]
-  node_bundler = "esbuild"
+  conditions = {Role = ["*"]}
 
 [[headers]]
   for = "/*"
