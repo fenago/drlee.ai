@@ -2,9 +2,8 @@ import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { streamText } from '~/lib/.server/llm/stream-text';
 import type { IProviderSetting, ProviderInfo } from '~/types/model';
 import { generateText } from 'ai';
-import { PROVIDER_LIST } from '~/utils/constants';
-import { MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { LLMManager } from '~/lib/modules/llm/manager';
+import { MAX_TOKENS } from '~/lib/.server/llm/constants';
 import type { ModelInfo } from '~/lib/modules/llm/types';
 import { getApiKeysFromCookie, getProviderSettingsFromCookie } from '~/lib/api/cookies';
 import { createScopedLogger } from '~/utils/logger';
@@ -13,13 +12,34 @@ export async function action(args: ActionFunctionArgs) {
   return llmCallAction(args);
 }
 
-async function getModelList(options: {
+async function getModelList({
+  apiKeys,
+  providerSettings,
+  serverEnv,
+}: {
   apiKeys?: Record<string, string>;
   providerSettings?: Record<string, IProviderSetting>;
   serverEnv?: Record<string, string>;
-}) {
-  const llmManager = LLMManager.getInstance(import.meta.env);
-  return llmManager.updateModelList(options);
+}): Promise<ModelInfo[]> {
+  const llmManager = LLMManager.getInstance(serverEnv as any);
+  const models: ModelInfo[] = [];
+  const providers = llmManager.getAllProviders();
+
+  for (const provider of providers) {
+    const staticModels = llmManager.getStaticModelListFromProvider(provider);
+    models.push(...staticModels);
+
+    try {
+      const providerModels = await llmManager.getModelListFromProvider(provider, {
+        apiKeys,
+        providerSettings,
+        serverEnv: serverEnv as any,
+      });
+      models.push(...providerModels);
+    } catch {}
+  }
+
+  return models;
 }
 
 const logger = createScopedLogger('api.llmcall');
@@ -103,13 +123,10 @@ async function llmCallAction({ context, request }: ActionFunctionArgs) {
 
       const dynamicMaxTokens = modelDetails && modelDetails.maxTokenAllowed ? modelDetails.maxTokenAllowed : MAX_TOKENS;
 
-      const providerInfo = PROVIDER_LIST.find((p) => p.name === provider.name);
+      const llmManager = LLMManager.getInstance(context.cloudflare.env as any);
+      const providerInstance = llmManager.getProvider(providerName) || llmManager.getDefaultProvider();
 
-      if (!providerInfo) {
-        throw new Error('Provider not found');
-      }
-
-      logger.info(`Generating response Provider: ${provider.name}, Model: ${modelDetails.name}`);
+      logger.info(`Generating response Provider: ${provider}, Model: ${modelDetails.name}`);
 
       const result = await generateText({
         system,
@@ -119,7 +136,7 @@ async function llmCallAction({ context, request }: ActionFunctionArgs) {
             content: `${message}`,
           },
         ],
-        model: providerInfo.getModelInstance({
+        model: providerInstance.getModelInstance({
           model: modelDetails.name,
           serverEnv: context.cloudflare?.env as any,
           apiKeys,

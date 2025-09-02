@@ -34,7 +34,19 @@ export interface ChatHistoryItem {
 
 const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
 
-export const db = persistenceEnabled ? await openDatabase() : undefined;
+// Lazy initialization to avoid SSR issues
+let _db: IDBDatabase | undefined | null = null;
+
+export async function getDb(): Promise<IDBDatabase | undefined> {
+  if (_db === null && persistenceEnabled && typeof window !== 'undefined') {
+    _db = await openDatabase();
+  }
+
+  return _db || undefined;
+}
+
+// For backward compatibility - will be undefined on server
+export const db = typeof window !== 'undefined' && persistenceEnabled ? await openDatabase() : undefined;
 
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);

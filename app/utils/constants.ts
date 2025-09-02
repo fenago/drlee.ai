@@ -1,5 +1,5 @@
-import { LLMManager } from '~/lib/modules/llm/manager';
 import type { Template } from '~/types/template';
+import type { ProviderInfo, IProviderSetting } from '~/types/model';
 
 export const WORK_DIR_NAME = 'project';
 export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
@@ -9,18 +9,76 @@ export const PROVIDER_REGEX = /\[Provider: (.*?)\]\n\n/;
 export const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
 
-const llmManager = LLMManager.getInstance(import.meta.env);
+// Default providers for SSR - will be replaced on client
+const DEFAULT_PROVIDER_INFO: ProviderInfo = {
+  name: 'Anthropic',
+  staticModels: [],
+};
 
-export const PROVIDER_LIST = llmManager.getAllProviders();
-export const DEFAULT_PROVIDER = llmManager.getDefaultProvider();
+// These will be initialized on the client side only
+export let PROVIDER_LIST: ProviderInfo[] = [];
+export let DEFAULT_PROVIDER: ProviderInfo = DEFAULT_PROVIDER_INFO;
 
 export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {};
-PROVIDER_LIST.forEach((provider) => {
-  providerBaseUrlEnvKeys[provider.name] = {
-    baseUrlKey: provider.config.baseUrlKey,
-    apiTokenKey: provider.config.apiTokenKey,
-  };
-});
+
+// Initialize on client side only
+if (typeof window !== 'undefined') {
+  // Dynamic import to avoid SSR issues
+  import('~/lib/modules/llm/manager')
+    .then((llmModule) => {
+      const manager = llmModule.LLMManager.getInstance(import.meta.env);
+
+      async function loadProviders(llmManager: any) {
+        const providers = await llmManager.getAllProviders();
+
+        // Update the exports
+        PROVIDER_LIST = providers.map((p: any) => ({
+          name: p.name,
+          staticModels: p.staticModels || [],
+          getDynamicModels: p.getDynamicModels
+            ? (
+                providerName: string,
+                apiKeys?: Record<string, string>,
+                providerSettings?: IProviderSetting,
+                serverEnv?: Record<string, string>,
+              ) => p.getDynamicModels!(apiKeys, providerSettings, serverEnv)
+            : undefined,
+          getApiKeyLink: p.getApiKeyLink,
+          labelForGetApiKey: p.labelForGetApiKey,
+          icon: p.icon,
+        }));
+
+        const defaultProvider = llmManager.getDefaultProvider();
+        DEFAULT_PROVIDER = {
+          name: defaultProvider.name,
+          staticModels: defaultProvider.staticModels || [],
+          getDynamicModels: defaultProvider.getDynamicModels
+            ? (
+                providerName: string,
+                apiKeys?: Record<string, string>,
+                providerSettings?: IProviderSetting,
+                serverEnv?: Record<string, string>,
+              ) => defaultProvider.getDynamicModels!(apiKeys, providerSettings, serverEnv)
+            : undefined,
+          getApiKeyLink: defaultProvider.getApiKeyLink,
+          labelForGetApiKey: defaultProvider.labelForGetApiKey,
+          icon: defaultProvider.icon,
+        };
+
+        // Populate provider base URL keys
+        providers.forEach((provider: any) => {
+          providerBaseUrlEnvKeys[provider.name] = {
+            baseUrlKey: provider.config?.baseUrlKey,
+            apiTokenKey: provider.config?.apiTokenKey,
+          };
+        });
+      }
+      loadProviders(manager);
+    })
+    .catch((err) => {
+      console.error('Error loading providers:', err);
+    });
+}
 
 // starter Templates
 
