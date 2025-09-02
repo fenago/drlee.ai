@@ -12,13 +12,6 @@
   node_bundler = "esbuild"
   included_files = ["build/server/**"]
 
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/remix-server"
-  status = 200
-  force = true
-  conditions = {Role = ["*"]}
-
 [[headers]]
   for = "/*"
   [headers.values]
