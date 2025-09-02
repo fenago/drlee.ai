@@ -15,7 +15,18 @@ export default function handleRequest(
   responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
   responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
 
-  return new Response('<!DOCTYPE html>' + markup, {
+  const html = `<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <div id="root" class="w-full h-full">${markup}</div>
+  </body>
+</html>`;
+
+  return new Response(html, {
     headers: responseHeaders,
     status: responseStatusCode,
   });
