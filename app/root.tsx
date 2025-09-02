@@ -54,18 +54,6 @@ const inlineThemeCode = stripIndents`
   }
 `;
 
-export function Head() {
-  return (
-    <>
-      <meta charSet="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <Meta />
-      <Links />
-      <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
-    </>
-  );
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
   const theme = useStore(themeStore);
 
@@ -105,4 +93,3 @@ export default function App() {
     </Layout>
   );
 }
-
