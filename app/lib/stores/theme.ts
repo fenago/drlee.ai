@@ -11,20 +11,21 @@ export function themeIsDark() {
 
 export const DEFAULT_THEME = 'light';
 
-export const themeStore = atom<Theme>(initStore());
+export const themeStore = atom<Theme>(DEFAULT_THEME);
 
-function initStore() {
-  if (!import.meta.env.SSR) {
-    const persistedTheme = localStorage.getItem(kTheme) as Theme | undefined;
-    const themeAttribute = document.querySelector('html')?.getAttribute('data-theme');
-
-    return persistedTheme ?? (themeAttribute as Theme) ?? DEFAULT_THEME;
-  }
-
-  return DEFAULT_THEME;
+// Initialize theme on client side only
+if (typeof window !== 'undefined') {
+  const persistedTheme = localStorage.getItem(kTheme) as Theme | undefined;
+  const themeAttribute = document.querySelector('html')?.getAttribute('data-theme');
+  const initialTheme = persistedTheme ?? (themeAttribute as Theme) ?? DEFAULT_THEME;
+  themeStore.set(initialTheme);
 }
 
 export function toggleTheme() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   const currentTheme = themeStore.get();
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 

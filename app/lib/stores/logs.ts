@@ -1,5 +1,4 @@
 import { atom, map } from 'nanostores';
-import Cookies from 'js-cookie';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('LogStore');
@@ -52,11 +51,9 @@ class LogStore {
   private _readLogs = new Set<string>();
 
   constructor() {
-    // Load saved logs from cookies on initialization
-    this._loadLogs();
-
-    // Only load read logs in browser environment
+    // Only load logs in browser environment
     if (typeof window !== 'undefined') {
+      this._loadLogs();
       this._loadReadLogs();
     }
   }
@@ -66,8 +63,13 @@ class LogStore {
     return this._logs;
   }
 
-  private _loadLogs() {
-    const savedLogs = Cookies.get('eventLogs');
+  private async _loadLogs() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const cookies = (await import('js-cookie')).default;
+    const savedLogs = cookies.get('eventLogs');
 
     if (savedLogs) {
       try {
@@ -96,9 +98,14 @@ class LogStore {
     }
   }
 
-  private _saveLogs() {
+  private async _saveLogs() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const cookies = (await import('js-cookie')).default;
     const currentLogs = this._logs.get();
-    Cookies.set('eventLogs', JSON.stringify(currentLogs));
+    cookies.set('eventLogs', JSON.stringify(currentLogs));
   }
 
   private _saveReadLogs() {

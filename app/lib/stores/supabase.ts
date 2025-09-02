@@ -23,32 +23,42 @@ export interface SupabaseConnectionState {
   selectedProjectId?: string;
   isConnected?: boolean;
   project?: SupabaseProject;
-  credentials?: SupabaseCredentials;
+  connection?: any;
+  credentials?: SupabaseCredentials | null;
+  projectsCache?: SupabaseProject[];
+  client?: any;
 }
 
-const savedConnection = typeof localStorage !== 'undefined' ? localStorage.getItem('supabase_connection') : null;
-const savedCredentials = typeof localStorage !== 'undefined' ? localStorage.getItem('supabaseCredentials') : null;
-
-const initialState: SupabaseConnectionState = savedConnection
-  ? JSON.parse(savedConnection)
-  : {
-      user: null,
-      token: '',
-      stats: undefined,
-      selectedProjectId: undefined,
-      isConnected: false,
-      project: undefined,
-    };
-
-if (savedCredentials && !initialState.credentials) {
-  try {
-    initialState.credentials = JSON.parse(savedCredentials);
-  } catch (e) {
-    console.error('Failed to parse saved credentials:', e);
-  }
-}
+const initialState: SupabaseConnectionState = {
+  user: null,
+  connection: null,
+  credentials: null,
+  projectsCache: [],
+  client: null,
+  token: '',
+  selectedProjectId: undefined,
+};
 
 export const supabaseConnection = atom<SupabaseConnectionState>(initialState);
+
+// Load from localStorage on client side
+if (typeof window !== 'undefined') {
+  const savedConnection = localStorage.getItem('supabase_connection');
+  const savedCredentials = localStorage.getItem('supabaseCredentials');
+
+  if (savedConnection) {
+    try {
+      const parsed = JSON.parse(savedConnection);
+      supabaseConnection.set({
+        ...initialState,
+        ...parsed,
+        credentials: savedCredentials ? JSON.parse(savedCredentials) : null,
+      });
+    } catch (error) {
+      console.error('Failed to parse Supabase connection from localStorage:', error);
+    }
+  }
+}
 
 if (initialState.token && !initialState.stats) {
   fetchSupabaseStats(initialState.token).catch(console.error);
@@ -97,17 +107,19 @@ export function updateSupabaseConnection(connection: Partial<SupabaseConnectionS
   /*
    * Always save the connection state to localStorage to persist across chats
    */
-  if (connection.user || connection.token || connection.selectedProjectId !== undefined || connection.credentials) {
-    localStorage.setItem('supabase_connection', JSON.stringify(newState));
+  if (typeof window !== 'undefined') {
+    if (connection.user || connection.token || connection.selectedProjectId !== undefined || connection.credentials) {
+      localStorage.setItem('supabase_connection', JSON.stringify(newState));
 
-    if (newState.credentials) {
-      localStorage.setItem('supabaseCredentials', JSON.stringify(newState.credentials));
+      if (newState.credentials) {
+        localStorage.setItem('supabaseCredentials', JSON.stringify(newState.credentials));
+      } else {
+        localStorage.removeItem('supabaseCredentials');
+      }
     } else {
+      localStorage.removeItem('supabase_connection');
       localStorage.removeItem('supabaseCredentials');
     }
-  } else {
-    localStorage.removeItem('supabase_connection');
-    localStorage.removeItem('supabaseCredentials');
   }
 }
 

@@ -3,20 +3,30 @@ import type { NetlifyConnection, NetlifyUser } from '~/types/netlify';
 import { logStore } from './logs';
 import { toast } from 'react-toastify';
 
-// Initialize with stored connection or environment variable
-const storedConnection = typeof window !== 'undefined' ? localStorage.getItem('netlify_connection') : null;
+// Initialize with environment variable
 const envToken = import.meta.env.VITE_NETLIFY_ACCESS_TOKEN;
 
-// If we have an environment token but no stored connection, initialize with the env token
-const initialConnection: NetlifyConnection = storedConnection
-  ? JSON.parse(storedConnection)
-  : {
-      user: null,
-      token: envToken || '',
-      stats: undefined,
-    };
+// Initialize with defaults
+const initialConnection: NetlifyConnection = {
+  user: null,
+  token: '',
+};
 
 export const netlifyConnection = atom<NetlifyConnection>(initialConnection);
+
+// Load from localStorage on client side
+if (typeof window !== 'undefined') {
+  const storedConnection = localStorage.getItem('netlifyConnection');
+
+  if (storedConnection) {
+    try {
+      netlifyConnection.set(JSON.parse(storedConnection));
+    } catch (error) {
+      console.error('Failed to parse Netlify connection from localStorage:', error);
+    }
+  }
+}
+
 export const isConnecting = atom<boolean>(false);
 export const isFetchingStats = atom<boolean>(false);
 

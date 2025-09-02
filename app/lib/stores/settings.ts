@@ -1,6 +1,6 @@
 import { atom, map } from 'nanostores';
-import { PROVIDER_LIST } from '~/utils/constants';
 import type { IProviderConfig } from '~/types/model';
+import { PROVIDER_LIST } from '~/utils/constants';
 import type {
   TabVisibilityConfig,
   TabWindowConfig,
@@ -11,6 +11,9 @@ import { DEFAULT_TAB_CONFIG } from '~/components/@settings/core/constants';
 import Cookies from 'js-cookie';
 import { toggleTheme } from './theme';
 import { create } from 'zustand';
+
+// Check if running in browser
+const isBrowser = typeof window !== 'undefined';
 
 export interface Shortcut {
   key: string;
@@ -58,67 +61,68 @@ export const shortcutsStore = map<Shortcuts>({
 
 // Create a single key for provider settings
 const PROVIDER_SETTINGS_KEY = 'provider_settings';
-
-// Add this helper function at the top of the file
-const isBrowser = typeof window !== 'undefined';
+const TAB_CONFIG_KEY = 'bolt_tab_configuration';
 
 // Initialize provider settings from both localStorage and defaults
 const getInitialProviderSettings = (): ProviderSetting => {
   const initialSettings: ProviderSetting = {};
 
-  // Start with default settings
-  PROVIDER_LIST.forEach((provider) => {
+  // Add default settings for all providers
+  PROVIDER_LIST.forEach((provider: any) => {
     initialSettings[provider.name] = {
       ...provider,
       settings: {
-        // Local providers should be disabled by default
-        enabled: !LOCAL_PROVIDERS.includes(provider.name),
+        enabled: true,
+        baseUrl: '',
       },
     };
   });
-
-  // Only try to load from localStorage in the browser
-  if (isBrowser) {
-    const savedSettings = localStorage.getItem(PROVIDER_SETTINGS_KEY);
-
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        Object.entries(parsed).forEach(([key, value]) => {
-          if (initialSettings[key]) {
-            initialSettings[key].settings = (value as IProviderConfig).settings;
-          }
-        });
-      } catch (error) {
-        console.error('Error parsing saved provider settings:', error);
-      }
-    }
-  }
 
   return initialSettings;
 };
 
 export const providersStore = map<ProviderSetting>(getInitialProviderSettings());
 
-// Create a function to update provider settings that handles both store and persistence
-export const updateProviderSettings = (provider: string, settings: ProviderSetting) => {
-  const currentSettings = providersStore.get();
+// Load settings from localStorage after initialization
+if (isBrowser) {
+  const savedSettings = localStorage.getItem(PROVIDER_SETTINGS_KEY);
 
-  // Create new provider config with updated settings
+  if (savedSettings) {
+    try {
+      const parsedSettings: ProviderSetting = JSON.parse(savedSettings);
+      const currentSettings = providersStore.get();
+
+      // Merge saved settings with defaults
+      Object.keys(parsedSettings).forEach((key) => {
+        if (currentSettings[key]) {
+          providersStore.setKey(key, {
+            ...currentSettings[key],
+            ...parsedSettings[key],
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Failed to parse provider settings from localStorage:', error);
+    }
+  }
+}
+
+// Create a function to update provider settings that handles both store and persistence
+export const updateProviderSettings = (provider: string, config: IProviderConfig) => {
+  const currentSettings = providersStore.get();
   const updatedProvider = {
     ...currentSettings[provider],
-    settings: {
-      ...currentSettings[provider].settings,
-      ...settings,
-    },
+    ...config,
   };
 
   // Update the store with new settings
   providersStore.setKey(provider, updatedProvider);
 
   // Save to localStorage
-  const allSettings = providersStore.get();
-  localStorage.setItem(PROVIDER_SETTINGS_KEY, JSON.stringify(allSettings));
+  if (isBrowser) {
+    const allSettings = providersStore.get();
+    localStorage.setItem(PROVIDER_SETTINGS_KEY, JSON.stringify(allSettings));
+  }
 };
 
 export const isDebugMode = atom(false);
@@ -175,27 +179,42 @@ export const promptStore = atom<string>(initialSettings.promptId);
 // Helper functions to update settings with persistence
 export const updateLatestBranch = (enabled: boolean) => {
   latestBranchStore.set(enabled);
-  localStorage.setItem(SETTINGS_KEYS.LATEST_BRANCH, JSON.stringify(enabled));
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.LATEST_BRANCH, JSON.stringify(enabled));
+  }
 };
 
 export const updateAutoSelectTemplate = (enabled: boolean) => {
   autoSelectStarterTemplate.set(enabled);
-  localStorage.setItem(SETTINGS_KEYS.AUTO_SELECT_TEMPLATE, JSON.stringify(enabled));
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.AUTO_SELECT_TEMPLATE, JSON.stringify(enabled));
+  }
 };
 
 export const updateContextOptimization = (enabled: boolean) => {
   enableContextOptimizationStore.set(enabled);
-  localStorage.setItem(SETTINGS_KEYS.CONTEXT_OPTIMIZATION, JSON.stringify(enabled));
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.CONTEXT_OPTIMIZATION, JSON.stringify(enabled));
+  }
 };
 
 export const updateEventLogs = (enabled: boolean) => {
   isEventLogsEnabled.set(enabled);
-  localStorage.setItem(SETTINGS_KEYS.EVENT_LOGS, JSON.stringify(enabled));
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.EVENT_LOGS, JSON.stringify(enabled));
+  }
 };
 
 export const updatePromptId = (id: string) => {
   promptStore.set(id);
-  localStorage.setItem(SETTINGS_KEYS.PROMPT_ID, id);
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.PROMPT_ID, id);
+  }
 };
 
 // Initialize tab configuration from localStorage or defaults
@@ -237,11 +256,38 @@ const getInitialTabConfiguration = (): TabWindowConfig => {
 
 // console.log('Initial tab configuration:', getInitialTabConfiguration());
 
-export const tabConfigurationStore = map<TabWindowConfig>(getInitialTabConfiguration());
+export const tabConfigStore = atom<TabWindowConfig>(getInitialTabConfiguration());
+
+export const resetTabConfiguration = () => {
+  const defaultConfig: TabWindowConfig = {
+    userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
+    developerTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is DevTabConfig => tab.window === 'developer'),
+  };
+  tabConfigStore.set(defaultConfig);
+
+  if (isBrowser) {
+    localStorage.setItem(TAB_CONFIG_KEY, JSON.stringify(defaultConfig));
+  }
+};
+
+export const updateTabConfiguration = (config: Partial<TabWindowConfig>) => {
+  const currentConfig = tabConfigStore.get();
+  const updatedConfig = {
+    ...currentConfig,
+    ...config,
+    userTabs: config.userTabs || currentConfig.userTabs,
+    developerTabs: config.developerTabs || currentConfig.developerTabs,
+  };
+  tabConfigStore.set(updatedConfig);
+
+  if (isBrowser) {
+    localStorage.setItem(TAB_CONFIG_KEY, JSON.stringify(updatedConfig));
+  }
+};
 
 // Helper function to update tab configuration
-export const updateTabConfiguration = (config: TabVisibilityConfig) => {
-  const currentConfig = tabConfigurationStore.get();
+export const updateTabVisibility = (config: TabVisibilityConfig) => {
+  const currentConfig = tabConfigStore.get();
   console.log('Current tab configuration before update:', currentConfig);
 
   const isUserTab = config.window === 'user';
@@ -263,7 +309,7 @@ export const updateTabConfiguration = (config: TabVisibilityConfig) => {
 
   console.log('New tab configuration after update:', newConfig);
 
-  tabConfigurationStore.set(newConfig);
+  tabConfigStore.set(newConfig);
   Cookies.set('tabConfiguration', JSON.stringify(newConfig), {
     expires: 365, // Set cookie to expire in 1 year
     path: '/',
@@ -272,14 +318,17 @@ export const updateTabConfiguration = (config: TabVisibilityConfig) => {
 };
 
 // Helper function to reset tab configuration
-export const resetTabConfiguration = () => {
+export const resetToDefaults = () => {
   const defaultConfig: TabWindowConfig = {
     userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
     developerTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is DevTabConfig => tab.window === 'developer'),
   };
 
-  tabConfigurationStore.set(defaultConfig);
-  localStorage.setItem('bolt_tab_configuration', JSON.stringify(defaultConfig));
+  tabConfigStore.set(defaultConfig);
+
+  if (isBrowser) {
+    localStorage.setItem('bolt_tab_configuration', JSON.stringify(defaultConfig));
+  }
 };
 
 // Developer mode store with persistence

@@ -7,8 +7,8 @@ import {
   latestBranchStore,
   autoSelectStarterTemplate,
   enableContextOptimizationStore,
-  tabConfigurationStore,
-  updateTabConfiguration as updateTabConfig,
+  tabConfigStore,
+  updateTabConfiguration,
   resetTabConfiguration as resetTabConfig,
   updateProviderSettings as updateProviderSettingsStore,
   updateLatestBranch,
@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import type { IProviderSetting, ProviderInfo, IProviderConfig } from '~/types/model';
-import type { TabWindowConfig, TabVisibilityConfig } from '~/components/@settings/core/types';
+import type { TabWindowConfig } from '~/components/@settings/core/types';
 import { logStore } from '~/lib/stores/logs';
 import { getLocalStorage, setLocalStorage } from '~/lib/persistence';
 
@@ -62,14 +62,11 @@ export interface UseSettingsReturn {
 
   // Tab configuration
   tabConfiguration: TabWindowConfig;
-  updateTabConfiguration: (config: TabVisibilityConfig) => void;
+  updateTabConfiguration: (config: Partial<TabWindowConfig>) => void;
   resetTabConfiguration: () => void;
 }
 
 // Add interface to match ProviderSetting type
-interface ProviderSettingWithIndex extends IProviderSetting {
-  [key: string]: any;
-}
 
 export function useSettings(): UseSettingsReturn {
   const providers = useStore(providersStore);
@@ -80,7 +77,7 @@ export function useSettings(): UseSettingsReturn {
   const autoSelectTemplate = useStore(autoSelectStarterTemplate);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
   const contextOptimizationEnabled = useStore(enableContextOptimizationStore);
-  const tabConfiguration = useStore(tabConfigurationStore);
+  const tabConfiguration = useStore(tabConfigStore);
   const [settings, setSettings] = useState<Settings>(() => {
     const storedSettings = getLocalStorage('settings');
     return {
@@ -110,8 +107,8 @@ export function useSettings(): UseSettingsReturn {
     });
   }, []);
 
-  const updateProviderSettings = useCallback((provider: string, config: ProviderSettingWithIndex) => {
-    updateProviderSettingsStore(provider, config);
+  const updateProviderSettings = useCallback((provider: string, config: IProviderSetting) => {
+    updateProviderSettingsStore(provider, config as IProviderConfig);
   }, []);
 
   const enableDebugMode = useCallback((enabled: boolean) => {
@@ -205,7 +202,7 @@ export function useSettings(): UseSettingsReturn {
     setTimezone,
     settings,
     tabConfiguration,
-    updateTabConfiguration: updateTabConfig,
+    updateTabConfiguration,
     resetTabConfiguration: resetTabConfig,
   };
 }

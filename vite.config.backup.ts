@@ -102,18 +102,20 @@ export default defineConfig((config) => {
               if (id.includes('@radix-ui')) {
                 return 'ui';
               }
+
               // Don't manually chunk React for SSR build
               if (!process.env.VITE_BUILD_SSR && (id.includes('react/') || id.includes('react-dom/'))) {
                 return 'vendor';
               }
             }
           },
-          chunkFileNames: 'assets/[name]-[hash].js'
+          chunkFileNames: 'assets/[name]-[hash].js',
         },
         onwarn(warning: any, warn: any) {
           if (warning.code === 'EVAL' || warning.code === 'MODULE_LEVEL_DIRECTIVE') {
             return;
           }
+
           warn(warning);
         },
       },

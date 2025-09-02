@@ -11,12 +11,7 @@ import { useFeatures } from '~/lib/hooks/useFeatures';
 import { useNotifications } from '~/lib/hooks/useNotifications';
 import { useConnectionStatus } from '~/lib/hooks/useConnectionStatus';
 import { useDebugStatus } from '~/lib/hooks/useDebugStatus';
-import {
-  tabConfigurationStore,
-  developerModeStore,
-  setDeveloperMode,
-  resetTabConfiguration,
-} from '~/lib/stores/settings';
+import { tabConfigStore, developerModeStore, setDeveloperMode, resetTabConfiguration } from '~/lib/stores/settings';
 import { profileStore } from '~/lib/stores/profile';
 import type { TabType, TabVisibilityConfig, Profile } from './types';
 import { TAB_LABELS, DEFAULT_TAB_CONFIG } from './constants';
@@ -159,7 +154,7 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
   const [showTabManagement, setShowTabManagement] = useState(false);
 
   // Store values
-  const tabConfiguration = useStore(tabConfigurationStore);
+  const tabConfiguration = useStore(tabConfigStore);
   const developerMode = useStore(developerModeStore);
   const profile = useStore(profileStore) as Profile;
 
@@ -205,9 +200,9 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
       };
 
       // Process tabs in priority order
-      tabConfiguration.developerTabs?.forEach((tab) => processTab(tab as BaseTabConfig));
-      tabConfiguration.userTabs.forEach((tab) => processTab(tab as BaseTabConfig));
-      DEFAULT_TAB_CONFIG.forEach((tab) => processTab(tab as BaseTabConfig));
+      tabConfiguration.developerTabs?.forEach((tab: any) => processTab(tab as BaseTabConfig));
+      tabConfiguration.userTabs.forEach((tab: any) => processTab(tab as BaseTabConfig));
+      DEFAULT_TAB_CONFIG.forEach((tab: any) => processTab(tab as BaseTabConfig));
 
       // Add Tab Management tile
       devTabs.push({
@@ -223,7 +218,7 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
 
     // Optimize user mode tab filtering
     return tabConfiguration.userTabs
-      .filter((tab) => {
+      .filter((tab: any) => {
         if (!tab?.id) {
           return false;
         }
@@ -234,7 +229,7 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
 
         return tab.visible && tab.window === 'user';
       })
-      .sort((a, b) => a.order - b.order);
+      .sort((a: any, b: any) => a.order - b.order);
   }, [tabConfiguration, developerMode, profile?.preferences?.notifications, baseTabConfig]);
 
   // Optimize animation performance with layout animations

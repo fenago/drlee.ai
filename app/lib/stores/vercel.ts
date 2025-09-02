@@ -3,17 +3,27 @@ import type { VercelConnection } from '~/types/vercel';
 import { logStore } from './logs';
 import { toast } from 'react-toastify';
 
-// Initialize with stored connection or defaults
-const storedConnection = typeof window !== 'undefined' ? localStorage.getItem('vercel_connection') : null;
-const initialConnection: VercelConnection = storedConnection
-  ? JSON.parse(storedConnection)
-  : {
-      user: null,
-      token: '',
-      stats: undefined,
-    };
+// Initialize with defaults
+const initialConnection: VercelConnection = {
+  user: null,
+  token: '',
+};
 
 export const vercelConnection = atom<VercelConnection>(initialConnection);
+
+// Load from localStorage on client side
+if (typeof window !== 'undefined') {
+  const storedConnection = localStorage.getItem('vercel_connection');
+
+  if (storedConnection) {
+    try {
+      vercelConnection.set(JSON.parse(storedConnection));
+    } catch (error) {
+      console.error('Failed to parse Vercel connection from localStorage:', error);
+    }
+  }
+}
+
 export const isConnecting = atom<boolean>(false);
 export const isFetchingStats = atom<boolean>(false);
 

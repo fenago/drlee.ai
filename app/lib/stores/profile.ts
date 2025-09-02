@@ -1,22 +1,34 @@
 import { atom } from 'nanostores';
 
 interface Profile {
-  username: string;
-  bio: string;
+  name: string;
+  theme: string;
   avatar: string;
+  username?: string;
+  bio?: string;
 }
 
-// Initialize with stored profile or defaults
-const storedProfile = typeof window !== 'undefined' ? localStorage.getItem('bolt_profile') : null;
-const initialProfile: Profile = storedProfile
-  ? JSON.parse(storedProfile)
-  : {
-      username: '',
-      bio: '',
-      avatar: '',
-    };
+// Initialize with defaults
+const initialProfile: Profile = {
+  name: '',
+  theme: 'light',
+  avatar: '',
+};
 
 export const profileStore = atom<Profile>(initialProfile);
+
+// Load profile from localStorage on client side
+if (typeof window !== 'undefined') {
+  const storedProfile = localStorage.getItem('bolt_profile');
+
+  if (storedProfile) {
+    try {
+      profileStore.set(JSON.parse(storedProfile));
+    } catch (error) {
+      console.error('Failed to parse profile from localStorage:', error);
+    }
+  }
+}
 
 export const updateProfile = (updates: Partial<Profile>) => {
   profileStore.set({ ...profileStore.get(), ...updates });

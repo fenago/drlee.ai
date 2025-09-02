@@ -1,6 +1,7 @@
-import { createRequestHandler } from "@netlify/remix-adapter";
+import { createRequestHandler } from '@netlify/remix-adapter';
+
 // @ts-ignore - Build will be generated during compilation
-import * as build from "../../build/server/index.js";
+import * as build from '../../build/server/index.js';
 
 export default createRequestHandler({
   build: build as any,

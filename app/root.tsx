@@ -82,18 +82,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { logStore } from './lib/stores/logs';
-
 export default function App() {
   const theme = useStore(themeStore);
 
   useEffect(() => {
-    logStore.logSystem('Application initialized', {
-      theme,
-      platform: navigator.platform,
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-    });
+    // Only access browser APIs on client side
+    if (typeof window !== 'undefined') {
+      import('./lib/stores/logs').then(({ logStore }) => {
+        logStore.logSystem('Application initialized', {
+          theme,
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        });
+      });
+    }
   }, []);
 
   return (

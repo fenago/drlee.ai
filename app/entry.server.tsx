@@ -1,7 +1,6 @@
 import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import ReactDOMServer from 'react-dom/server';
-import { themeStore } from '~/lib/stores/theme';
 
 const { renderToReadableStream } = ReactDOMServer;
 
@@ -27,7 +26,7 @@ export default async function handleRequest(
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head></head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="en" data-theme="light"><head></head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );

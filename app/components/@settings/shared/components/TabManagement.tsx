@@ -3,12 +3,20 @@ import { motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
 import { Switch } from '~/components/ui/Switch';
 import { classNames } from '~/utils/classNames';
-import { tabConfigurationStore } from '~/lib/stores/settings';
+import { tabConfigStore } from '~/lib/stores/settings';
 import { TAB_LABELS } from '~/components/@settings/core/constants';
 import type { TabType } from '~/components/@settings/core/types';
 import { toast } from 'react-toastify';
 import { TbLayoutGrid } from 'react-icons/tb';
 import { useSettingsStore } from '~/lib/stores/settings';
+
+// Define the tab configuration type
+interface TabConfig {
+  id: TabType;
+  visible: boolean;
+  window: 'user' | 'developer';
+  order: number;
+}
 
 // Define tab icons mapping
 const TAB_ICONS: Record<TabType, string> = {
@@ -55,7 +63,7 @@ const BetaLabel = () => (
 
 export const TabManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const tabConfiguration = useStore(tabConfigurationStore);
+  const tabConfiguration = useStore(tabConfigStore);
   const { setSelectedTab } = useSettingsStore();
 
   const handleTabVisibilityChange = (tabId: TabType, checked: boolean) => {
@@ -73,7 +81,7 @@ export const TabManagement = () => {
 
       const updatedTabs = [...tabConfiguration.userTabs, newTab];
 
-      tabConfigurationStore.set({
+      tabConfigStore.set({
         ...tabConfiguration,
         userTabs: updatedTabs,
       });
@@ -92,7 +100,7 @@ export const TabManagement = () => {
     }
 
     // Update tab visibility
-    const updatedTabs = tabConfiguration.userTabs.map((tab) => {
+    const updatedTabs = tabConfiguration.userTabs.map((tab: any) => {
       if (tab.id === tabId) {
         return { ...tab, visible: checked };
       }
@@ -101,7 +109,7 @@ export const TabManagement = () => {
     });
 
     // Update store
-    tabConfigurationStore.set({
+    tabConfigStore.set({
       ...tabConfiguration,
       userTabs: updatedTabs,
     });
@@ -111,10 +119,10 @@ export const TabManagement = () => {
   };
 
   // Create a map of existing tab configurations
-  const tabConfigMap = new Map(tabConfiguration.userTabs.map((tab) => [tab.id, tab]));
+  const tabConfigMap = new Map(tabConfiguration.userTabs.map((tab: any) => [tab.id, tab]));
 
   // Generate the complete list of tabs, including those not in the configuration
-  const allTabs = ALL_USER_TABS.map((tabId) => {
+  const allTabs: TabConfig[] = ALL_USER_TABS.map((tabId) => {
     return (
       tabConfigMap.get(tabId) || {
         id: tabId,
@@ -126,7 +134,9 @@ export const TabManagement = () => {
   });
 
   // Filter tabs based on search query
-  const filteredTabs = allTabs.filter((tab) => TAB_LABELS[tab.id].toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredTabs = allTabs.filter((tab: TabConfig) =>
+    TAB_LABELS[tab.id].toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   useEffect(() => {
     // Reset to first tab when component unmounts
@@ -187,7 +197,7 @@ export const TabManagement = () => {
         {/* Tab Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Default Section Header */}
-          {filteredTabs.some((tab) => DEFAULT_USER_TABS.includes(tab.id)) && (
+          {filteredTabs.some((tab: TabConfig) => DEFAULT_USER_TABS.includes(tab.id)) && (
             <div className="col-span-full flex items-center gap-2 mt-4 mb-2">
               <div className="i-ph:star-fill w-4 h-4 text-purple-500" />
               <span className="text-sm font-medium text-bolt-elements-textPrimary">Default Tabs</span>
@@ -196,8 +206,8 @@ export const TabManagement = () => {
 
           {/* Default Tabs */}
           {filteredTabs
-            .filter((tab) => DEFAULT_USER_TABS.includes(tab.id))
-            .map((tab, index) => (
+            .filter((tab: TabConfig) => DEFAULT_USER_TABS.includes(tab.id))
+            .map((tab: TabConfig, index: number) => (
               <motion.div
                 key={tab.id}
                 className={classNames(
@@ -233,7 +243,7 @@ export const TabManagement = () => {
                     <div
                       className={classNames('w-6 h-6', 'transition-transform duration-200', 'group-hover:rotate-12')}
                     >
-                      <div className={classNames(TAB_ICONS[tab.id], 'w-full h-full')} />
+                      <div className={classNames(TAB_ICONS[(tab as TabConfig).id], 'w-full h-full')} />
                     </div>
                   </motion.div>
 
@@ -242,27 +252,29 @@ export const TabManagement = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-medium text-bolt-elements-textPrimary group-hover:text-purple-500 transition-colors">
-                            {TAB_LABELS[tab.id]}
+                            {TAB_LABELS[(tab as TabConfig).id]}
                           </h4>
-                          {BETA_TABS.has(tab.id) && <BetaLabel />}
+                          {BETA_TABS.has((tab as TabConfig).id) && <BetaLabel />}
                         </div>
                         <p className="text-xs text-bolt-elements-textSecondary mt-0.5">
-                          {tab.visible ? 'Visible in user mode' : 'Hidden in user mode'}
+                          {(tab as TabConfig).visible ? 'Visible in user mode' : 'Hidden in user mode'}
                         </p>
                       </div>
                       <Switch
-                        checked={tab.visible}
+                        checked={(tab as TabConfig).visible}
                         onCheckedChange={(checked) => {
                           const isDisabled =
-                            !DEFAULT_USER_TABS.includes(tab.id) && !OPTIONAL_USER_TABS.includes(tab.id);
+                            !DEFAULT_USER_TABS.includes((tab as TabConfig).id) &&
+                            !OPTIONAL_USER_TABS.includes((tab as TabConfig).id);
 
                           if (!isDisabled) {
-                            handleTabVisibilityChange(tab.id, checked);
+                            handleTabVisibilityChange((tab as TabConfig).id, checked);
                           }
                         }}
                         className={classNames('data-[state=checked]:bg-purple-500 ml-4', {
                           'opacity-50 pointer-events-none':
-                            !DEFAULT_USER_TABS.includes(tab.id) && !OPTIONAL_USER_TABS.includes(tab.id),
+                            !DEFAULT_USER_TABS.includes((tab as TabConfig).id) &&
+                            !OPTIONAL_USER_TABS.includes((tab as TabConfig).id),
                         })}
                       />
                     </div>
@@ -272,8 +284,8 @@ export const TabManagement = () => {
                 <motion.div
                   className="absolute inset-0 border-2 border-purple-500/0 rounded-lg pointer-events-none"
                   animate={{
-                    borderColor: tab.visible ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0)',
-                    scale: tab.visible ? 1 : 0.98,
+                    borderColor: (tab as TabConfig).visible ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0)',
+                    scale: (tab as TabConfig).visible ? 1 : 0.98,
                   }}
                   transition={{ duration: 0.2 }}
                 />
@@ -281,7 +293,7 @@ export const TabManagement = () => {
             ))}
 
           {/* Optional Section Header */}
-          {filteredTabs.some((tab) => OPTIONAL_USER_TABS.includes(tab.id)) && (
+          {filteredTabs.some((tab: TabConfig) => OPTIONAL_USER_TABS.includes(tab.id)) && (
             <div className="col-span-full flex items-center gap-2 mt-8 mb-2">
               <div className="i-ph:plus-circle-fill w-4 h-4 text-blue-500" />
               <span className="text-sm font-medium text-bolt-elements-textPrimary">Optional Tabs</span>
@@ -290,8 +302,8 @@ export const TabManagement = () => {
 
           {/* Optional Tabs */}
           {filteredTabs
-            .filter((tab) => OPTIONAL_USER_TABS.includes(tab.id))
-            .map((tab, index) => (
+            .filter((tab: TabConfig) => OPTIONAL_USER_TABS.includes(tab.id))
+            .map((tab: TabConfig, index: number) => (
               <motion.div
                 key={tab.id}
                 className={classNames(
@@ -327,7 +339,7 @@ export const TabManagement = () => {
                     <div
                       className={classNames('w-6 h-6', 'transition-transform duration-200', 'group-hover:rotate-12')}
                     >
-                      <div className={classNames(TAB_ICONS[tab.id], 'w-full h-full')} />
+                      <div className={classNames(TAB_ICONS[(tab as TabConfig).id], 'w-full h-full')} />
                     </div>
                   </motion.div>
 
@@ -336,27 +348,29 @@ export const TabManagement = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-medium text-bolt-elements-textPrimary group-hover:text-purple-500 transition-colors">
-                            {TAB_LABELS[tab.id]}
+                            {TAB_LABELS[(tab as TabConfig).id]}
                           </h4>
-                          {BETA_TABS.has(tab.id) && <BetaLabel />}
+                          {BETA_TABS.has((tab as TabConfig).id) && <BetaLabel />}
                         </div>
                         <p className="text-xs text-bolt-elements-textSecondary mt-0.5">
-                          {tab.visible ? 'Visible in user mode' : 'Hidden in user mode'}
+                          {(tab as TabConfig).visible ? 'Visible in user mode' : 'Hidden in user mode'}
                         </p>
                       </div>
                       <Switch
-                        checked={tab.visible}
+                        checked={(tab as TabConfig).visible}
                         onCheckedChange={(checked) => {
                           const isDisabled =
-                            !DEFAULT_USER_TABS.includes(tab.id) && !OPTIONAL_USER_TABS.includes(tab.id);
+                            !DEFAULT_USER_TABS.includes((tab as TabConfig).id) &&
+                            !OPTIONAL_USER_TABS.includes((tab as TabConfig).id);
 
                           if (!isDisabled) {
-                            handleTabVisibilityChange(tab.id, checked);
+                            handleTabVisibilityChange((tab as TabConfig).id, checked);
                           }
                         }}
                         className={classNames('data-[state=checked]:bg-purple-500 ml-4', {
                           'opacity-50 pointer-events-none':
-                            !DEFAULT_USER_TABS.includes(tab.id) && !OPTIONAL_USER_TABS.includes(tab.id),
+                            !DEFAULT_USER_TABS.includes((tab as TabConfig).id) &&
+                            !OPTIONAL_USER_TABS.includes((tab as TabConfig).id),
                         })}
                       />
                     </div>
@@ -366,8 +380,8 @@ export const TabManagement = () => {
                 <motion.div
                   className="absolute inset-0 border-2 border-purple-500/0 rounded-lg pointer-events-none"
                   animate={{
-                    borderColor: tab.visible ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0)',
-                    scale: tab.visible ? 1 : 0.98,
+                    borderColor: (tab as TabConfig).visible ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0)',
+                    scale: (tab as TabConfig).visible ? 1 : 0.98,
                   }}
                   transition={{ duration: 0.2 }}
                 />
