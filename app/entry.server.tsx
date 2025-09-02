@@ -1,9 +1,7 @@
-import type { AppLoadContext } from '@remix-run/node';
+import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import ReactDOMServer from 'react-dom/server';
-import { renderHeadToString } from 'remix-island';
-import { Head } from './root';
 import { themeStore } from '~/lib/stores/theme';
 
 const { renderToReadableStream } = ReactDOMServer;
@@ -12,7 +10,7 @@ export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: any,
+  remixContext: EntryContext,
   _loadContext: AppLoadContext,
 ) {
   // await initializeModelList({});
@@ -27,12 +25,10 @@ export default async function handleRequest(
 
   const body = new ReadableStream({
     start(controller) {
-      const head = renderHeadToString({ request, remixContext, Head });
-
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head></head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );
@@ -67,7 +63,16 @@ export default async function handleRequest(
   });
 
   if (isbot(request.headers.get('user-agent') || '')) {
-    await readable.allReady;
+    // Wait for the stream to be fully read for bots
+    const reader = readable.getReader();
+
+    while (true) {
+      const { done } = await reader.read();
+
+      if (done) {
+        break;
+      }
+    }
   }
 
   responseHeaders.set('Content-Type', 'text/html');
