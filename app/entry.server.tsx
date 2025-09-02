@@ -1,6 +1,5 @@
 import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
-import { isbot } from 'isbot';
 import ReactDOMServer from 'react-dom/server';
 import { themeStore } from '~/lib/stores/theme';
 
@@ -62,18 +61,7 @@ export default async function handleRequest(
     },
   });
 
-  if (isbot(request.headers.get('user-agent') || '')) {
-    // Wait for the stream to be fully read for bots
-    const reader = readable.getReader();
-
-    while (true) {
-      const { done } = await reader.read();
-
-      if (done) {
-        break;
-      }
-    }
-  }
+  // Bot detection removed - stream is already being consumed by body
 
   responseHeaders.set('Content-Type', 'text/html');
 
