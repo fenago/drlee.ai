@@ -13,24 +13,11 @@
   included_files = ["build/server/**"]
 
 [[redirects]]
-  from = "/build/*"
-  to = "/build/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/assets/*"
-  to = "/assets/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/favicon.ico"
-  to = "/favicon.ico"
-  status = 200
-
-[[redirects]]
   from = "/*"
   to = "/.netlify/functions/remix-server"
   status = 200
+  force = true
+  conditions = {Role = ["*"]}
 
 [[headers]]
   for = "/*"
