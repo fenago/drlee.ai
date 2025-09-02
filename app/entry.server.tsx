@@ -1,8 +1,6 @@
 import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
-import ReactDOMServer from 'react-dom/server';
-
-const renderToReadableStream = ReactDOMServer.renderToReadableStream || (ReactDOMServer as any).renderToReadableStream;
+import { renderToString } from 'react-dom/server';
 
 export default async function handleRequest(
   request: Request,
@@ -11,19 +9,13 @@ export default async function handleRequest(
   remixContext: EntryContext,
   _loadContext: AppLoadContext,
 ) {
-  const body = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
-    signal: request.signal,
-    onError(error: unknown) {
-      console.error(error);
-      responseStatusCode = 500;
-    },
-  });
+  const markup = renderToString(<RemixServer context={remixContext} url={request.url} />);
 
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
   responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
 
-  return new Response(body, {
+  return new Response('<!DOCTYPE html>' + markup, {
     headers: responseHeaders,
     status: responseStatusCode,
   });
