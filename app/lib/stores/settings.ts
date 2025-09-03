@@ -78,6 +78,34 @@ const getInitialProviderSettings = (): ProviderSetting => {
     };
   });
 
+  /**
+   * If no providers were initialized (PROVIDER_LIST is empty on initial load)
+   * Add default Anthropic provider to ensure at least one is available
+   */
+  if (Object.keys(initialSettings).length === 0) {
+    initialSettings.Anthropic = {
+      name: 'Anthropic',
+      staticModels: [
+        {
+          name: 'claude-3-5-sonnet-latest',
+          label: 'Claude 3.5 Sonnet',
+          provider: 'Anthropic',
+          maxTokenAllowed: 8192,
+        },
+        {
+          name: 'claude-3-5-haiku-latest',
+          label: 'Claude 3.5 Haiku',
+          provider: 'Anthropic',
+          maxTokenAllowed: 8192,
+        },
+      ],
+      settings: {
+        enabled: true,
+        baseUrl: '',
+      },
+    } as IProviderConfig;
+  }
+
   return initialSettings;
 };
 
@@ -103,6 +131,34 @@ if (isBrowser) {
       });
     } catch (error) {
       console.error('Failed to parse provider settings from localStorage:', error);
+    }
+  } else {
+    // No saved settings - ensure at least one provider is enabled
+    const currentSettings = providersStore.get();
+
+    if (Object.keys(currentSettings).length === 0 || !Object.values(currentSettings).some((p) => p.settings?.enabled)) {
+      // Enable Anthropic by default
+      providersStore.setKey('Anthropic', {
+        name: 'Anthropic',
+        staticModels: [
+          {
+            name: 'claude-3-5-sonnet-latest',
+            label: 'Claude 3.5 Sonnet',
+            provider: 'Anthropic',
+            maxTokenAllowed: 8192,
+          },
+          {
+            name: 'claude-3-5-haiku-latest',
+            label: 'Claude 3.5 Haiku',
+            provider: 'Anthropic',
+            maxTokenAllowed: 8192,
+          },
+        ],
+        settings: {
+          enabled: true,
+          baseUrl: '',
+        },
+      } as IProviderConfig);
     }
   }
 }
