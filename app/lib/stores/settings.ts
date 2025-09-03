@@ -67,44 +67,17 @@ const TAB_CONFIG_KEY = 'bolt_tab_configuration';
 const getInitialProviderSettings = (): ProviderSetting => {
   const initialSettings: ProviderSetting = {};
 
-  // Add default settings for all providers
-  PROVIDER_LIST.forEach((provider: any) => {
+  // Start with default settings - enable all providers except local ones
+  PROVIDER_LIST.forEach((provider) => {
     initialSettings[provider.name] = {
       ...provider,
       settings: {
-        enabled: true,
+        // Local providers should be disabled by default
+        enabled: !LOCAL_PROVIDERS.includes(provider.name),
         baseUrl: '',
       },
     };
   });
-
-  /**
-   * If no providers were initialized (PROVIDER_LIST is empty on initial load)
-   * Add default Anthropic provider to ensure at least one is available
-   */
-  if (Object.keys(initialSettings).length === 0) {
-    initialSettings.Anthropic = {
-      name: 'Anthropic',
-      staticModels: [
-        {
-          name: 'claude-3-5-sonnet-latest',
-          label: 'Claude 3.5 Sonnet',
-          provider: 'Anthropic',
-          maxTokenAllowed: 8192,
-        },
-        {
-          name: 'claude-3-5-haiku-latest',
-          label: 'Claude 3.5 Haiku',
-          provider: 'Anthropic',
-          maxTokenAllowed: 8192,
-        },
-      ],
-      settings: {
-        enabled: true,
-        baseUrl: '',
-      },
-    } as IProviderConfig;
-  }
 
   return initialSettings;
 };
@@ -117,50 +90,58 @@ if (isBrowser) {
 
   if (savedSettings) {
     try {
-      const parsedSettings: ProviderSetting = JSON.parse(savedSettings);
-      const currentSettings = providersStore.get();
+      const parsed = JSON.parse(savedSettings);
+      Object.entries(parsed).forEach(([key, value]) => {
+        const currentProvider = providersStore.get()[key];
 
-      // Merge saved settings with defaults
-      Object.keys(parsedSettings).forEach((key) => {
-        if (currentSettings[key]) {
+        if (currentProvider) {
           providersStore.setKey(key, {
-            ...currentSettings[key],
-            ...parsedSettings[key],
+            ...currentProvider,
+            settings: (value as IProviderConfig).settings,
           });
         }
       });
     } catch (error) {
-      console.error('Failed to parse provider settings from localStorage:', error);
-    }
-  } else {
-    // No saved settings - ensure at least one provider is enabled
-    const currentSettings = providersStore.get();
-
-    if (Object.keys(currentSettings).length === 0 || !Object.values(currentSettings).some((p) => p.settings?.enabled)) {
-      // Enable Anthropic by default
-      providersStore.setKey('Anthropic', {
-        name: 'Anthropic',
-        staticModels: [
-          {
-            name: 'claude-3-5-sonnet-latest',
-            label: 'Claude 3.5 Sonnet',
-            provider: 'Anthropic',
-            maxTokenAllowed: 8192,
-          },
-          {
-            name: 'claude-3-5-haiku-latest',
-            label: 'Claude 3.5 Haiku',
-            provider: 'Anthropic',
-            maxTokenAllowed: 8192,
-          },
-        ],
-        settings: {
-          enabled: true,
-          baseUrl: '',
-        },
-      } as IProviderConfig);
+      console.error('Error parsing saved provider settings:', error);
     }
   }
+
+  // Watch for PROVIDER_LIST updates and initialize new providers
+  const checkAndInitializeProviders = () => {
+    const currentSettings = providersStore.get();
+    PROVIDER_LIST.forEach((provider) => {
+      if (!currentSettings[provider.name]) {
+        // New provider detected, add it to the store
+        providersStore.setKey(provider.name, {
+          ...provider,
+          settings: {
+            enabled: !LOCAL_PROVIDERS.includes(provider.name),
+            baseUrl: '',
+          },
+        });
+      }
+    });
+
+    // If we have providers now, save to localStorage
+    if (Object.keys(providersStore.get()).length > 0) {
+      const allSettings = providersStore.get();
+      localStorage.setItem(PROVIDER_SETTINGS_KEY, JSON.stringify(allSettings));
+    }
+  };
+
+  // Check immediately and periodically for provider list updates
+  checkAndInitializeProviders();
+
+  // Set up an interval to check for provider list updates
+  const interval = setInterval(() => {
+    if (PROVIDER_LIST.length > 0) {
+      checkAndInitializeProviders();
+      clearInterval(interval); // Stop checking once providers are loaded
+    }
+  }, 100);
+
+  // Clear interval after 5 seconds to prevent infinite checking
+  setTimeout(() => clearInterval(interval), 5000);
 }
 
 // Create a function to update provider settings that handles both store and persistence
