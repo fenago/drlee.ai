@@ -79,26 +79,55 @@ const getInitialProviderSettings = (): ProviderSetting => {
     };
   });
 
+  /**
+   * If no providers loaded yet (SSR or initial load), add a minimal Anthropic provider
+   * This prevents blank page and will be replaced when actual providers load
+   */
+  if (Object.keys(initialSettings).length === 0) {
+    initialSettings.Anthropic = {
+      name: 'Anthropic',
+      staticModels: [
+        {
+          name: 'claude-3-5-sonnet-latest',
+          label: 'Claude 3.5 Sonnet',
+          provider: 'Anthropic',
+          maxTokenAllowed: 8192,
+        },
+      ],
+      settings: {
+        enabled: true, // Enable by default to prevent "No providers" error
+        baseUrl: '',
+      },
+    } as IProviderConfig;
+  }
+
   return initialSettings;
 };
 
 export const providersStore = map<ProviderSetting>(getInitialProviderSettings());
 
-// Load settings from localStorage after initialization
+// Only run client-side initialization in browser
 if (isBrowser) {
+  // Load saved settings from localStorage
   const savedSettings = localStorage.getItem(PROVIDER_SETTINGS_KEY);
 
   if (savedSettings) {
     try {
       const parsed = JSON.parse(savedSettings);
-      Object.entries(parsed).forEach(([key, value]) => {
-        const currentProvider = providersStore.get()[key];
 
-        if (currentProvider) {
-          providersStore.setKey(key, {
-            ...currentProvider,
-            settings: (value as IProviderConfig).settings,
-          });
+      // Only restore settings for providers that exist
+      Object.entries(parsed).forEach(([key, value]) => {
+        const providerConfig = value as IProviderConfig;
+
+        if (providerConfig && providerConfig.settings) {
+          const currentProvider = providersStore.get()[key];
+
+          if (currentProvider) {
+            providersStore.setKey(key, {
+              ...currentProvider,
+              settings: providerConfig.settings,
+            });
+          }
         }
       });
     } catch (error) {
@@ -106,42 +135,46 @@ if (isBrowser) {
     }
   }
 
-  // Watch for PROVIDER_LIST updates and initialize new providers
-  const checkAndInitializeProviders = () => {
-    const currentSettings = providersStore.get();
-    PROVIDER_LIST.forEach((provider) => {
-      if (!currentSettings[provider.name]) {
-        // New provider detected, add it to the store
-        providersStore.setKey(provider.name, {
-          ...provider,
-          settings: {
-            enabled: !LOCAL_PROVIDERS.includes(provider.name),
-            baseUrl: '',
-          },
-        });
-      }
-    });
+  /*
+   * Use a simple interval to check for provider list updates
+   * This avoids dynamic imports that might break rendering
+   */
+  let checkCount = 0;
+  const checkProviders = setInterval(() => {
+    checkCount++;
 
-    // If we have providers now, save to localStorage
-    if (Object.keys(providersStore.get()).length > 0) {
-      const allSettings = providersStore.get();
-      localStorage.setItem(PROVIDER_SETTINGS_KEY, JSON.stringify(allSettings));
-    }
-  };
-
-  // Check immediately and periodically for provider list updates
-  checkAndInitializeProviders();
-
-  // Set up an interval to check for provider list updates
-  const interval = setInterval(() => {
     if (PROVIDER_LIST.length > 0) {
-      checkAndInitializeProviders();
-      clearInterval(interval); // Stop checking once providers are loaded
+      const currentSettings = providersStore.get();
+      let hasNewProviders = false;
+
+      PROVIDER_LIST.forEach((provider) => {
+        if (!currentSettings[provider.name]) {
+          // New provider detected, add it to the store
+          providersStore.setKey(provider.name, {
+            ...provider,
+            settings: {
+              enabled: !LOCAL_PROVIDERS.includes(provider.name),
+              baseUrl: '',
+            },
+          });
+          hasNewProviders = true;
+        }
+      });
+
+      /**
+       * Save if we added new providers
+       */
+      if (hasNewProviders) {
+        const allSettings = providersStore.get();
+        localStorage.setItem(PROVIDER_SETTINGS_KEY, JSON.stringify(allSettings));
+      }
+
+      clearInterval(checkProviders);
+    } else if (checkCount > 50) {
+      // Stop checking after 5 seconds (50 * 100ms)
+      clearInterval(checkProviders);
     }
   }, 100);
-
-  // Clear interval after 5 seconds to prevent infinite checking
-  setTimeout(() => clearInterval(interval), 5000);
 }
 
 // Create a function to update provider settings that handles both store and persistence
